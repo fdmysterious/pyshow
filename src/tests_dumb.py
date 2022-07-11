@@ -16,6 +16,8 @@ from pyshow.dmx.interfaces import (
     RangeValue_DMX_16Bits
 )
 
+from pyshow.core.interfaces import (ColorValue)
+
 from dataclasses import dataclass, field, asdict, InitVar
 from pprint      import pprint
 
@@ -53,25 +55,27 @@ class MyFixture(Fixture_DMX):
             unit    = "%"
         ),
 
-        red = RangeValue_DMX_8Bits(
-            channel = 1,
-            min     = 0.0,
-            max     = 1.0,
-            unit    = ""
-        ),
+        color = ColorValue(
+            r = RangeValue_DMX_8Bits(
+                channel = 1,
+                min     = 0.0,
+                max     = 1.0,
+                unit    = ""
+            ),
 
-        green = RangeValue_DMX_8Bits(
-            channel = 2,
-            min     = 0.0,
-            max     = 1.0,
-            unit    = ""
-        ),
+            g = RangeValue_DMX_8Bits(
+                channel = 2,
+                min     = 0.0,
+                max     = 1.0,
+                unit    = ""
+            ),
 
-        blue = RangeValue_DMX_8Bits(
-            channel = 3,
-            min     = 0.0,
-            max     = 1.0,
-            unit    = ""
+            b = RangeValue_DMX_8Bits(
+                channel = 3,
+                min     = 0.0,
+                max     = 1.0,
+                unit    = ""
+            )
         ),
     ))
 
@@ -83,10 +87,10 @@ if __name__ == "__main__":
     fixture = MyFixture(transport=transport, channel_start=1)
 
     # Set some values
-    fixture.interfaces["dimmer"].set(100.0)
-    fixture.interfaces["red"].set   (0.5  )
-    fixture.interfaces["green"].set (0.23 )
-    fixture.interfaces["blue"].set  (0.8  )
+    fixture.interfaces["dimmer"].set (100.0)
+    fixture.interfaces["color"].r.set(0.5  )
+    fixture.interfaces["color"].g.set(0.23 )
+    fixture.interfaces["color"].b.set(0.8  )
 
     print("Serialize fixture: ")
     pprint(asdict(fixture))

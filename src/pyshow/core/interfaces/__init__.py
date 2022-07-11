@@ -59,6 +59,31 @@ class AtomicValue(BaseValue):
 
 
 # ┌────────────────────────────────────────┐
+# │ GroupValue interface class             │
+# └────────────────────────────────────────┘
+
+@dataclass(kw_only=True)
+class GroupValue(BaseValue):
+    def __post_init__(self):
+        super().__post_init__()
+        self.__fixture = None
+
+    @property
+    def fixture(self):
+        return self.__fixture
+        
+    
+    @fixture.setter
+    def fixture(self, fixt):
+        self.__fixture = fixt
+
+        # Attach to children
+        for ch_name, ch in self.__dict__.items():
+            if isinstance(ch, BaseValue):
+                ch.fixture = self.__fixture
+
+
+# ┌────────────────────────────────────────┐
 # │ RangeValue interface class             │
 # └────────────────────────────────────────┘
 
@@ -133,3 +158,17 @@ class DiscreteValue(AtomicValue):
     # ──────── Hooks to be implemented ─────── #
     def _on_set(self, v):
         pass
+
+
+# ┌────────────────────────────────────────┐
+# │ ColorValue interface                   │
+# └────────────────────────────────────────┘
+
+@dataclass(kw_only=True)
+class ColorValue(GroupValue):
+    r: RangeValue
+    g: RangeValue
+    b: RangeValue
+
+    class_id: str = "ColorValue"
+
