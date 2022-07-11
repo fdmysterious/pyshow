@@ -172,3 +172,14 @@ class ColorValue(GroupValue):
 
     class_id: str = "ColorValue"
 
+
+# ┌────────────────────────────────────────┐
+# │ RotationValue interface                │
+# └────────────────────────────────────────┘
+
+@dataclass(kw_only=True)
+class RotationValue(GroupValue):
+    pan:  RangeValue
+    tilt: RangeValue
+    
+    class_id: str = "RotationValue"
