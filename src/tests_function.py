@@ -44,6 +44,21 @@ class MyFunction(Function_Animation):
         return self.__v_delta*phasor+self.__v_min
 
 
+class MyFunctionPeriodic(Function_Periodic):
+    def __init__(self, interface, period_s):
+        super().__init__(interface, period_s)
+
+        if not isinstance(interface, RangeValue):
+            raise TypeError("This function is compatible only for RangeValues")
+
+        self.__v_delta = interface.max - interface.min
+        self.__v_min   = interface.min
+
+    async def _compute_value(self, timestamp):
+        phasor = timestamp-math.floor(timestamp)
+        return self.__v_delta*phasor+self.__v_min
+
+
 # ┌────────────────────────────────────────┐
 # │ Test program                           │
 # └────────────────────────────────────────┘
@@ -57,13 +72,9 @@ async def main():
             interface = fixture.interfaces["dimmer"]
         ),
 
-        MyFunction(
-            interface = fixture.interfaces["color"].r
-        ),
-
-
-        MyFunction(
-            interface = fixture.interfaces["color"].g
+        MyFunctionPeriodic(
+            interface = fixture.interfaces["color"].r,
+            period_s  = 0.5
         )
     ]
 
