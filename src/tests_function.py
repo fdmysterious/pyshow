@@ -15,7 +15,8 @@ from pyshow.core.fixtures  import Fixture
 from pyshow.core.functions import (
     Function_Static,
     Function_Animation,
-    Function_Periodic
+    Function_Periodic,
+    Function_Fade
 )
 
 from pyshow.core.interfaces import RangeValue
@@ -73,16 +74,32 @@ async def main():
         ),
 
         MyFunctionPeriodic(
-            interface = fixture.interfaces["color"].r,
-            period_s  = 0.5
+            interface   = fixture.interfaces["color"].r,
+            period_s    = 0.5
+        ),
+
+        Function_Fade(
+            interface   = fixture.interfaces["color"].b,
+            fade_time_s = 1
         )
     ]
 
     try:
-        period    = 0.1
-        last_exec = time.time()
+        period           = 0.1
+        last_exec        = time.time()
+
+        timer_fade_stuff = time.time()
+        current_target   = 1.0
+
         while True:
             tstamp = time.time()
+
+            if tstamp-timer_fade_stuff > 3.0:
+                timer_fade_stuff = tstamp
+                functions[2].target_set(current_target)
+                current_target = 1.0 - current_target
+
+            # Update all functions (in parallel)
             await asyncio.gather(*[
                 fkt.update(tstamp) for fkt in functions
             ])
