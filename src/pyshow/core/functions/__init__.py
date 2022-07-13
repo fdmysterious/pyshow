@@ -27,6 +27,12 @@ class Function:
     async def update(self, timestamp: float):
         pass
 
+    def trigger(self):
+        self.dirty.set()
+
+    def finished(self):
+        return not self.dirty.is_set()
+
 
 # ┌────────────────────────────────────────┐
 # │ Static function                        │
@@ -50,14 +56,14 @@ class Function_Static(Function):
 # └────────────────────────────────────────┘
 
 class Function_Fade(Function):
-    def __init__(self, interface: RangeValue, fade_time_s: float):
+    def __init__(self, interface: RangeValue, target: float, fade_time_s: float):
         super().__init__(interface)
         if not isinstance(interface, RangeValue):
             raise TypeError(f"{self.__class__.name} only works for RangeValue based interfaces")
 
         self.fade_time_s   = fade_time_s # Fade time before target value
 
-        self._target       = None        # Target value
+        self.target        = target
         self._tstamp_last  = 0           # Last execution timestamp
         self._tstamp_end   = 0           # Timestamp when target value should be reached
 
@@ -74,20 +80,19 @@ class Function_Fade(Function):
     async def _compute_value(self, timestamp: float):
         v_cur = self.interface.get()     # Current value
 
-        v_new = self._target             # By default, target value
+        v_new = self.target             # By default, target value
         if timestamp > self._tstamp_end: # In middle of an update, compute value using linear interpolation
-            v_new = (self._target - v_cur)/(self._tstamp_end-self._tstamp_last)
+            v_new = (self.target - v_cur)/(self._tstamp_end-self._tstamp_last)
         self._tstamp_last = timestamp
 
         return v_new
 
-    def target_set(self, target: float):
-        self._tstamp_end = time.time() + self.fade_time_s
 
-        self._target = target
+    def trigger(self):
+        self._tstamp_end = time.time() + self.fade_time_s
         self.dirty.set()
-            
-        
+
+
 # ┌────────────────────────────────────────┐
 # │ Animation function                     │
 # └────────────────────────────────────────┘

@@ -10,6 +10,7 @@
 import asyncio
 import time
 import math
+import itertools
 
 from pyshow.core.fixtures  import Fixture
 from pyshow.core.functions import (
@@ -76,11 +77,20 @@ async def main():
         MyFunctionPeriodic(
             interface   = fixture.interfaces["color"].r,
             period_s    = 0.5
+        )
+    ]
+
+    fade_fkts = [
+        Function_Fade(
+            interface   = fixture.interfaces["color"].b,
+            target      = 1.0,
+            fade_time_s = 1.0
         ),
 
         Function_Fade(
             interface   = fixture.interfaces["color"].b,
-            fade_time_s = 1
+            target      = 0.0,
+            fade_time_s = 0.5
         )
     ]
 
@@ -88,22 +98,25 @@ async def main():
         period           = 0.1
         last_exec        = time.time()
 
-        timer_fade_stuff = time.time()
-        current_target   = 1.0
+        fade_idx         = 0
+
+        # Trigger all functions to allow initial value
+        for fkt in itertools.chain(functions, fade_fkts): fkt.trigger()
 
         while True:
             tstamp = time.time()
 
-            if tstamp-timer_fade_stuff > 3.0:
-                timer_fade_stuff = tstamp
-                functions[2].target_set(current_target)
-                current_target = 1.0 - current_target
-
             # Update all functions (in parallel)
             await asyncio.gather(*[
                 fkt.update(tstamp) for fkt in functions
-            ])
+            ] + [fade_fkts[fade_idx].update(tstamp)])
 
+            # Change fade function if finished
+            if fade_fkts[fade_idx].finished:
+                fade_idx = 1 - fade_idx
+                fade_fkts[fade_idx].trigger()
+
+            # Sleep
             curtime = time.time()
             await asyncio.sleep(curtime-last_exec+period)
             last_exec = time.time()
