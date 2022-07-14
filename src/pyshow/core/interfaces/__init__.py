@@ -126,7 +126,7 @@ class RangeValue(AtomicValue):
 @dataclass(kw_only=True)
 class DiscreteValue_Choice:
     label: str
-    value: float
+    value: any
     image: Optional[str] = ""
 
 

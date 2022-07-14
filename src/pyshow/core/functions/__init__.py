@@ -64,6 +64,10 @@ class Function_Fade(Function):
         self.fade_time_s   = fade_time_s # Fade time before target value
 
         self.target        = target
+
+        self._v_start      = 0           # Start value
+        self._tstamp_start = 0           # Start timestamp
+
         self._tstamp_last  = 0           # Last execution timestamp
         self._tstamp_end   = 0           # Timestamp when target value should be reached
 
@@ -79,17 +83,24 @@ class Function_Fade(Function):
 
     async def _compute_value(self, timestamp: float):
         v_cur = self.interface.get()     # Current value
+        v_new = self.target              # By default, target value
 
-        v_new = self.target             # By default, target value
-        if timestamp > self._tstamp_end: # In middle of an update, compute value using linear interpolation
-            v_new = (self.target - v_cur)/(self._tstamp_end-self._tstamp_last)
+        if timestamp < self._tstamp_end: # In middle of an update, compute value using linear interpolation
+            dy    = self.target-self._v_start
+            dx    = self._tstamp_end-self._tstamp_start
+            dt    = timestamp-self._tstamp_start
+
+            v_new = (dy/dx)*dt + self._v_start
         self._tstamp_last = timestamp
 
         return v_new
 
 
     def trigger(self):
-        self._tstamp_end = time.time() + self.fade_time_s
+        self._v_start      = self.interface.get()
+        self._tstamp_start = time.time()
+
+        self._tstamp_end   = time.time() + self.fade_time_s
         self.dirty.set()
 
 

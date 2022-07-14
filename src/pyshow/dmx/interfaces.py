@@ -18,7 +18,7 @@ from pyshow.dmx.fixtures import (Fixture_DMX)
 
 from dataclasses import dataclass, field
 
-from typing import Optional
+from typing import Optional, Dict
 
 
 # ┌────────────────────────────────────────┐
@@ -88,3 +88,23 @@ class RangeValue_DMX_16Bits(RangeValue):
         v_short = ((v-self.min)/self.max)*((1<<16)-1)
         self.fixture.ch_set(self.channel_msb, (int(v_short)>>8))
         self.fixture.ch_set(self.channel_lsb, (int(v_short) & 0xFF))
+
+
+# ┌────────────────────────────────────────┐
+# │ DiscreteValue_DMX class                │
+# └────────────────────────────────────────┘
+
+@dataclass(kw_only=True)
+class DiscreteValue_DMX_8Bits(DiscreteValue):
+    channel: int
+
+    choices: Dict[str, DiscreteValue_Choice]
+    class_id: str = "DiscreteValue_DMX_8Bits"
+
+    def _on_set(self, v):
+        if self.fixture is None:
+            raise ValueError("No DMX fixture atteched")
+        elif not isinstance(self.fixture, Fixture_DMX):
+            raise ValueError("Attached fixture is not DMX compatible")
+
+        self.fixture.ch_set(self.channel, int(v))
