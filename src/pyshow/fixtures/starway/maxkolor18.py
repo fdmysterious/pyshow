@@ -66,7 +66,7 @@ class Starway_Maxkolor18_11Ch(Fixture_DMX):
                 channel_lsb = 9,
 
                 min         = 0.0,
-                max         = 360.0,
+                max         = 506.0,
                 unit        = "°"
             ),
 
