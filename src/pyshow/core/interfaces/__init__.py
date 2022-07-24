@@ -93,6 +93,7 @@ class RangeValue(AtomicValue):
     max: float
     
     unit: Optional[str] = ""
+    invert: Optional[bool] = False
     class_id: str       = "RangeValue"
 
     # ─────────────── Post init ────────────── #
@@ -108,7 +109,7 @@ class RangeValue(AtomicValue):
         elif v > self.max: raise ValueError(f"{v} > {self.max}")
         else:
             self._value = v
-            self._on_set(v)
+            self._on_set(self.max-v if self.invert else v)
 
     def get(self):
         return self._value
