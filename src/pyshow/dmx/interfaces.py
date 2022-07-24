@@ -101,10 +101,11 @@ class DiscreteValue_DMX_8Bits(DiscreteValue):
     choices: Dict[str, DiscreteValue_Choice]
     class_id: str = "DiscreteValue_DMX_8Bits"
 
+    
     def _on_set(self, v):
         if self.fixture is None:
             raise ValueError("No DMX fixture atteched")
         elif not isinstance(self.fixture, Fixture_DMX):
             raise ValueError("Attached fixture is not DMX compatible")
-
-        self.fixture.ch_set(self.channel, int(v))
+        
+        self.fixture.ch_set(self.channel, int(self.choices[v].value))

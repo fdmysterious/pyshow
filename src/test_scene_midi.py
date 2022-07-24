@@ -64,7 +64,7 @@ async def main():
 
     ctrl.start(asyncio.get_running_loop())
     try:
-        period      = 0.01
+        period      = 0.001
         last_exec   = time.time()
 
         timer_stuff = last_exec

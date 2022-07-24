@@ -39,8 +39,9 @@ class Function:
 # └────────────────────────────────────────┘
 
 class Function_Static(Function):
-    def __init__(self, interface: BaseValue):
+    def __init__(self, interface: BaseValue, target: float = 0.0):
         super().__init__(interface)
+        self._target = target
 
     async def update(self, timestamp: float):
         if self.dirty.is_set():
@@ -50,6 +51,16 @@ class Function_Static(Function):
 
     async def _compute_value(self, timestamp: float):
         pass
+
+    @property
+    def target(self):
+        return self._target
+
+    @target.setter
+    def target(self, v: float):
+        self._target = v
+        self.dirty.set()
+
 
 # ┌────────────────────────────────────────┐
 # │ Fade function                          │
