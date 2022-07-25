@@ -9,9 +9,13 @@
 
 import serial
 import logging
+import time
 
 from enum        import IntEnum
 from dataclasses import dataclass, field
+
+from queue       import Queue
+from threading   import Thread, Event
 
 from pyshow.dmx.controller import DMX_Controller
 
@@ -74,6 +78,12 @@ class DMX_Controller_STM32(DMX_Controller):
 
         self.log               = logging.getLogger(f"STM32 controller on {path}")
 
+        # ─────────── Threading related ────────── #
+        
+        self._queue            = Queue(1)
+        self._worker_started   = Event()
+        self._worker_thread    = None # This object contains the Thread instance that is init. i nthe open function
+
 
     # ┌────────────────────────────────────────┐
     # │ Controller hooks                       │
@@ -87,16 +97,40 @@ class DMX_Controller_STM32(DMX_Controller):
             value1 = value
         ))
 
+    # ┌────────────────────────────────────────┐
+    # │ Worker thread                          │
+    # └────────────────────────────────────────┘
+    
+    def _worker(self):
+        self.dev.open()
+        try:
+            while self._worker_started.is_set():
+                buff = self._queue.get()
+
+                t_start = time.time()
+                self.dev.write(buff)
+                t_end = time.time()
+
+                self.log.debug("Write time: {t_end-t_start}ms")
+
+        finally:
+            self.dev.close()
+            self._worker_started.clear()
+
 
     # ┌────────────────────────────────────────┐
     # │ Controller specific functions          │
     # └────────────────────────────────────────┘
 
     def open(self):
-        self.dev.open()
+        self._worker_started.set()
+        self._worker_thread = Thread(target = self._worker)
+        self._worker_thread.start()
 
     def close(self):
-        self.dev.close()
+        self.dev.cancel_write()
+        self._worker_started.clear()
+        self._worker_thread.join()
     
     def _wrap(self, cmd):
         return bytes([cmd[0] | 0x80]) + cmd[1:] + bytes([0xFF])
@@ -105,5 +139,6 @@ class DMX_Controller_STM32(DMX_Controller):
         self.buffer += self._wrap(cmd.to_bytes())
 
     def flush(self):
-        self.dev.write(self.buffer)
+        # The following blocks if a write is in progress
+        self._queue.put(self.buffer)
         self.buffer = bytes()
