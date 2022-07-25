@@ -83,6 +83,7 @@ class DMX_Controller_STM32(DMX_Controller):
         self._queue            = Queue(1)
         self._worker_started   = Event()
         self._worker_thread    = None # This object contains the Thread instance that is init. i nthe open function
+        self._written_event    = Event()
 
 
     # ┌────────────────────────────────────────┐
@@ -107,11 +108,14 @@ class DMX_Controller_STM32(DMX_Controller):
             while self._worker_started.is_set():
                 buff = self._queue.get()
 
-                t_start = time.time()
-                self.dev.write(buff)
-                t_end = time.time()
-
-                self.log.debug("Write time: {t_end-t_start}ms")
+                try:
+                    if buff is not None:
+                        t_start = time.time()
+                        self.dev.write(buff)
+                        t_end = time.time()
+                        self.log.debug(f"Write time: {t_end-t_start}ms")
+                finally:
+                    self._written_event.set()
 
         finally:
             self.dev.close()
@@ -122,14 +126,20 @@ class DMX_Controller_STM32(DMX_Controller):
     # │ Controller specific functions          │
     # └────────────────────────────────────────┘
 
+    def _ensure_written(self):
+        self._written_event.wait()
+
     def open(self):
         self._worker_started.set()
         self._worker_thread = Thread(target = self._worker)
         self._worker_thread.start()
 
     def close(self):
-        self.dev.cancel_write()
+        if not self._queue.empty():
+            self._ensure_written()
+
         self._worker_started.clear()
+        self._queue.put(None)
         self._worker_thread.join()
     
     def _wrap(self, cmd):
