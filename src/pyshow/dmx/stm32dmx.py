@@ -113,7 +113,7 @@ class DMX_Controller_STM32(DMX_Controller):
                         t_start = time.time()
                         self.dev.write(buff)
                         t_end = time.time()
-                        self.log.debug(f"Write time: {t_end-t_start}ms")
+                        self.log.debug(f"Write time: {(t_end-t_start)*1000}ms")
                 finally:
                     self._written_event.set()
 
@@ -130,11 +130,14 @@ class DMX_Controller_STM32(DMX_Controller):
         self._written_event.wait()
 
     def open(self):
+        self.log.info("Open controller")
         self._worker_started.set()
         self._worker_thread = Thread(target = self._worker)
         self._worker_thread.start()
 
     def close(self):
+        self.log.info("Close controller")
+
         if not self._queue.empty():
             self._ensure_written()
 
