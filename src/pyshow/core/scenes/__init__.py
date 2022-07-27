@@ -8,11 +8,11 @@
 """
 
 import asyncio
+import time
 
-from typing                import List, Dict
+from typing                import List, Dict, Tuple
 from pyshow.core.functions import (Function)
 from functools             import reduce
-
 
 # ┌────────────────────────────────────────┐
 # │ Basic scene                            │
@@ -109,4 +109,57 @@ class Scene_Chooser:
             return self._scene_current.finished()
         return True # By default, finished
 
+
+# ┌────────────────────────────────────────┐
+# │ Scene_Sequence class                   │
+# └────────────────────────────────────────┘
+
+class Scene_Sequence:
+    """
+    Defines a sequence, which is a suite of scenes, referred to as "steps".
+
+    - auto mode: The next step is triggered automatically when the previous has
+    finished. By default, the next step must be triggered manually using the "next"
+    function.
+    - loop mode: When all steps are finished, the next one is the first one.
+    """
+
+    def __init__(self, steps: List[Scene], auto: bool=True, loop: bool=True):
+        self.steps = steps
+        self.auto  = auto
+        self.loop  = loop
+
+        self._idx  = None
+
+    # ──────────────── Update ──────────────── #
+    async def update(self, tstamp: float):
+        if not self.finished():
+            cur_step = self.steps[self._idx]
+
+            # Initial trigger check
+            if cur_step.finished(): cur_step.trigger()
+
+            # Update
+            await cur_step.update(tstamp)
+
+            # Next (if in auto mode) ?
+            if cur_step.finished() and self.auto: self.next()
+
+    # ────────────── Lifesceheme ───────────── #
     
+    def finished(self):
+        return self._idx is None
+
+    # ─────────── Sequence control ─────────── #
+
+    def trigger(self):
+        self._idx = 0
+    
+
+    def next(self):
+        if not self.finished():
+            self._idx += 1
+
+            # Loop control
+            if self._idx >= len(self.steps):
+                self._idx = 0 if self.loop else None
