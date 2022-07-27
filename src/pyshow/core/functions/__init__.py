@@ -15,12 +15,14 @@ from pyshow.core.interfaces import BaseValue, RangeValue
 
 from dataclasses            import dataclass
 
+from typing import List, Dict, Tuple
+
 # ┌────────────────────────────────────────┐
 # │ Base function class                    │
 # └────────────────────────────────────────┘
 
 class Function:
-    def __init__(self, interface: BaseValue):
+    def __init__(self, interface: BaseValue = None):
         self.interface = interface
         self.dirty     = asyncio.Event()
 
@@ -33,13 +35,35 @@ class Function:
     def finished(self):
         return not self.dirty.is_set()
 
+# ┌────────────────────────────────────────┐
+# │ Special delay function                 │
+# └────────────────────────────────────────┘
+
+class Function_Delay(Function):
+    def __init__(self, delay_s: float):
+        super().__init__()
+
+        self.delay_s = delay_s
+
+        self.tend    = None
+
+    async def update(self, tstamp: float):
+        # Delay has just started
+        if self.tend is None:
+            self.tend = tstamp + self.delay_s
+
+        # Delay is elapsed
+        elif tstamp > self.tend:
+            self.tend = None
+            self.dirty.clear()
+
 
 # ┌────────────────────────────────────────┐
 # │ Static function                        │
 # └────────────────────────────────────────┘
 
 class Function_Static(Function):
-    def __init__(self, interface: BaseValue, target: float = 0.0):
+    def __init__(self, interface: BaseValue = None, target: float = 0.0):
         super().__init__(interface)
         self._target = target
 
@@ -50,7 +74,7 @@ class Function_Static(Function):
             self.dirty.clear()
 
     async def _compute_value(self, timestamp: float):
-        pass
+        return self._target
 
     @property
     def target(self):
@@ -67,7 +91,7 @@ class Function_Static(Function):
 # └────────────────────────────────────────┘
 
 class Function_Fade(Function):
-    def __init__(self, interface: RangeValue, target: float, fade_time_s: float):
+    def __init__(self, target: float, fade_time_s: float, interface: RangeValue = None):
         super().__init__(interface)
         if not isinstance(interface, RangeValue):
             raise TypeError(f"{self.__class__.name} only works for RangeValue based interfaces")
@@ -120,7 +144,7 @@ class Function_Fade(Function):
 # └────────────────────────────────────────┘
 
 class Function_Animation(Function):
-    def __init__(self, interface: BaseValue):
+    def __init__(self, interface: BaseValue = None):
         super().__init__(interface)
         
     async def update(self, timestamp: float):
@@ -137,7 +161,7 @@ class Function_Animation(Function):
 # └────────────────────────────────────────┘
 
 class Function_Periodic(Function):
-    def __init__(self, interface: BaseValue, period_s: float):
+    def __init__(self, period_s: float, interface: BaseValue = None ):
         super().__init__(interface)
 
         self.period_s       = period_s
@@ -153,3 +177,4 @@ class Function_Periodic(Function):
             self.interface.set(v)
             self.dirty.clear()
             self.last_execution = timestamp
+
