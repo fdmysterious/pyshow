@@ -63,7 +63,7 @@ class Control_Desk_MIDI(Control_Desk):
 
         try:
             parsed = midi.from_bytes(bytes(msg))
-            self._push_event(parsed)
+            self._push_event_threadsafe(parsed)
         except Exception as exc:
             # TODO # Better logging
             print(f"Failed to parse or store MIDI message: {exc}")
