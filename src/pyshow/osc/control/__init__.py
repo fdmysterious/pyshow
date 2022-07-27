@@ -77,7 +77,7 @@ class Control_Desk_OSC(Control_Desk):
 
     async def _hook_process(self, ev):
         path, args = ev
-        self.log.info(f"Process OSC event: {path} with args {args}")
+        self.log.debug(f"Process OSC event: {path} with args {args}")
     
         if path in self._filters:
             # Callback for event
