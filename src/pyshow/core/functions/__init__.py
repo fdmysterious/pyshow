@@ -106,6 +106,11 @@ class Function_Fade(Function):
         self._tstamp_last  = 0           # Last execution timestamp
         self._tstamp_end   = 0           # Timestamp when target value should be reached
 
+        #self._dy           = 0           # Difference on y when in update
+        #self._dx           = 0           # Difference on x when in update
+        self._delta        = 0            # Derivative of the curve
+
+
 
     async def update(self, timestamp: float):
         if self.dirty.is_set():
@@ -121,11 +126,13 @@ class Function_Fade(Function):
         v_new = self.target              # By default, target value
 
         if timestamp < self._tstamp_end: # In middle of an update, compute value using linear interpolation
-            dy    = self.target-self._v_start
-            dx    = self._tstamp_end-self._tstamp_start
             dt    = timestamp-self._tstamp_start
+            v_new = self._delta*dt + self._v_start
 
-            v_new = (dy/dx)*dt + self._v_start
+        # Clip value
+        v_new = self.interface.max if v_new > self.interface.max else v_new
+        v_new = self.interface.min if v_new < self.interface.min else v_new
+
         self._tstamp_last = timestamp
 
         return v_new
@@ -136,6 +143,11 @@ class Function_Fade(Function):
         self._tstamp_start = time.time()
 
         self._tstamp_end   = time.time() + self.fade_time_s
+
+        dy           = self.target-self._v_start
+        dx           = self._tstamp_end-self._tstamp_start
+        self._delta  = dy/dx
+
         self.dirty.set()
 
 
