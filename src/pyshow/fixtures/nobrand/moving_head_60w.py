@@ -109,7 +109,7 @@ class NoBrand_60W_MovingHead_11Ch(Fixture_DMX):
             unit    = "%"
         ),
 
-        speed_horizontal = RangeValue_DMX_8Bits(
+        speed = RangeValue_DMX_8Bits(
             channel = 8,
 
             min     = 0,
