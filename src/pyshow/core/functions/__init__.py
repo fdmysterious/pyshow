@@ -190,3 +190,30 @@ class Function_Periodic(Function):
             self.dirty.clear()
             self.last_execution = timestamp
 
+
+    async def _compute_value(self, timestamp: float):
+        pass
+
+    def finished(self):
+        return False # A periodic function is never finished
+
+# ┌────────────────────────────────────────┐
+# │ Expression functions                   │
+# └────────────────────────────────────────┘
+
+class Function_Animation_Expr(Function_Animation):
+    def __init__(self, interface: BaseValue, expr):
+        super().__init__(interface)
+        self.expr = expr
+
+    async def _compute_value(self, timestamp: float):
+        return self.expr(self, timestamp)
+
+
+class Function_Periodic_Expr(Function_Periodic):
+    def __init__(self, interface: BaseValue, period_s: float, expr):
+        super().__init__(period_s=period_s, interface=interface)
+        self.expr = expr
+
+    async def _compute_value(self, timestamp: float):
+        return self.expr(self, timestamp)
