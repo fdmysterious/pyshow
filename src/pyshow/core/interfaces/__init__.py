@@ -184,3 +184,7 @@ class RotationValue(GroupValue):
     tilt: RangeValue
     
     class_id: str = "RotationValue"
+
+    def set(self, x: float, y: float):
+        self.pan.set(x)
+        self.tilt.set(y)
