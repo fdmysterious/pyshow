@@ -9,9 +9,10 @@
 
 import asyncio
 import time
+import random
 
 from abc                    import ABC, abstractmethod
-from pyshow.core.interfaces import BaseValue, RangeValue
+from pyshow.core.interfaces import BaseValue, RangeValue, DiscreteValue
 
 from dataclasses            import dataclass
 
@@ -76,6 +77,7 @@ class Function_Static(Function):
     async def _compute_value(self, timestamp: float):
         return self._target
 
+
     @property
     def target(self):
         return self._target
@@ -85,6 +87,12 @@ class Function_Static(Function):
         self._target = v
         self.dirty.set()
 
+
+    def randomize(self):
+        if isinstance(self.interface, DiscreteValue):
+            self.target = random.choice(self.interface.values.keys())
+        elif isinstance(self.interface, RangeValue):
+            self.target = random.uniform(self.interface.min, self.interface.max)
 
 # ┌────────────────────────────────────────┐
 # │ Fade function                          │
@@ -98,7 +106,7 @@ class Function_Fade(Function):
 
         self.fade_time_s   = fade_time_s # Fade time before target value
 
-        self.target        = target
+        self._target       = target
 
         self._v_start      = 0           # Start value
         self._tstamp_start = 0           # Start timestamp
@@ -109,7 +117,6 @@ class Function_Fade(Function):
         #self._dy           = 0           # Difference on y when in update
         #self._dx           = 0           # Difference on x when in update
         self._delta        = 0            # Derivative of the curve
-
 
 
     async def update(self, timestamp: float):
@@ -149,6 +156,21 @@ class Function_Fade(Function):
         self._delta  = dy/dx
 
         self.dirty.set()
+
+
+    @property
+    def target(self):
+        return self._target
+
+
+    @target.setter
+    def target(self, v: float):
+        self._target = v
+        self.dirty.set()
+
+
+    def randomize(self):
+        self.target = random.uniform(self.interface.min, self.interface.max)
 
 
 # ┌────────────────────────────────────────┐
