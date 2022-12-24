@@ -126,8 +126,10 @@ class Scene_Chooser:
     def randomize(self):
         if self._scene_flash is not None:
             self._scene_flash.randomize()
+            self._scene_flash.trigger()
         elif self._scene_current is not None:
             self._scene_current.randomize()
+            self._scene_current.trigger()
 
 
 # ┌────────────────────────────────────────┐
