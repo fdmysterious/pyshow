@@ -12,7 +12,7 @@ import time
 
 from typing                import List, Dict, Tuple
 from pyshow.core.functions import (Function)
-from functools             import reduce
+from functools             import reduce, partial
 
 # ┌────────────────────────────────────────┐
 # │ Basic scene                            │
@@ -22,13 +22,16 @@ class Scene:
     def __init__(self, functions: List[Function] = None):
         self.functions = functions or []
 
+
     def trigger(self):
         for f in self.functions: f.trigger()
+
 
     async def update(self, timestamp: float):
         await asyncio.gather(*[
             fkt.update(timestamp) for fkt in self.functions
         ])
+
 
     def finished(self):
         return reduce(
@@ -36,6 +39,11 @@ class Scene:
             map(lambda x: x.finished(), self.functions),
             True
         )
+
+
+    def randomize(self):
+        for fkt in filter(lambda x: hasattr(x, "randomize")):
+            fkt.randomize()
 
 
 # ┌────────────────────────────────────────┐
@@ -67,6 +75,7 @@ class Scene_Chooser:
     
     def current(self):
         return self._scene_current_name
+
 
     # ┌────────────────────────────────────────┐
     # │ Flash feature                          │
@@ -108,6 +117,17 @@ class Scene_Chooser:
         elif self._scene_current is not None:
             return self._scene_current.finished()
         return True # By default, finished
+    
+
+    # ┌────────────────────────────────────────┐
+    # │ Randomize                              │
+    # └────────────────────────────────────────┘
+
+    def randomize(self):
+        if self._scene_flash is not None:
+            self._scene_flash.randomize()
+        elif self._scene_current is not None:
+            self._scene_current.randomize()
 
 
 # ┌────────────────────────────────────────┐
